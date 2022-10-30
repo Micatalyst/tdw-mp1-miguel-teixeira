@@ -1,0 +1,45 @@
+image: node:16
+
+stages:
+  - install
+  - test
+  - build
+  - deploy
+
+install:
+  stage: install
+  script:
+    - npm install
+  artifacts:
+    paths:
+      - node_modules/
+    expire_in: 30 min
+
+test-job:
+  stage: test
+  script:
+    - npm run lint
+    - npm run prettier
+    - npm run test
+
+  cache:
+    paths:
+      - node_modules/
+
+build-job:
+  stage: build
+  script:
+    - npm run build
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+  artifacts:
+    paths:
+      - out/
+    expire_in: 30 min
+
+deploy:
+  stage: deploy
+  script:
+    - npx netlify-cli deploy --site $NETLIFY_SITE_ID --auth $NETLIFY_AUTH_TOKEN --prod
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
