@@ -16,19 +16,17 @@ export default function Alert({ preview }) {
           {preview ? (
             <>
               This is page is a preview.{" "}
-              <Link href="/api/exit-preview">
+              <Link legacyBehavior href="/api/exit-preview">
                 <a className="underline hover:text-cyan duration-200 transition-colors">
                   Click here
-                </a>{" "}
+                </a>
               </Link>
               to exit preview mode.
             </>
           ) : (
             <>
               The source code for this blog is{" "}
-              <Link
-                href={`https://github.com/vercel/next.js/tree/canary/examples/${EXAMPLE_PATH}`}
-              >
+              <Link legacyBehavior href={`https://github.com/vercel/next.js/tree/canary/examples/${EXAMPLE_PATH}`}>
                 <a className="underline hover:text-success duration-200 transition-colors">
                   available on GitHub
                 </a>
