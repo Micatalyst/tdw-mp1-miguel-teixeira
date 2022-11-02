@@ -77,10 +77,6 @@ jobs:
           node-version: 16
           cache: "npm"
           retention-days: 1
-      - uses: actions/download-artifact@v3
-        with:
-          path: out
-          retention-days: 1
         env:
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
