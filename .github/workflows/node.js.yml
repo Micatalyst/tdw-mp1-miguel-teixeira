@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: ["main"]
   repository_dispatch:
-    types: [ contentful.deploy ]
+    types: [publish-event]
   schedule:
     - cron: "0 0 * * *"
 
