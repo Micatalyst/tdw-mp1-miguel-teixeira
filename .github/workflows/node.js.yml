@@ -22,7 +22,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 16
-          path: ../../node_modules/
+          path: node_modules
       - run: npm ci
       - run: npm install
 
@@ -57,7 +57,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 16
-          path: ../../out
+          path: out
       - run: npm ci
       - run: npm run build
 
