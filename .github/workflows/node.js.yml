@@ -42,7 +42,7 @@ jobs:
             ${{ runner.os }}-
       - run: npm ci
       - run: npm run lint
-      - run: npm run format
+      - run: npm run prettier
       - run: npm run test
 
   build:
