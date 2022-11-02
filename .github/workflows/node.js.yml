@@ -1,67 +1,135 @@
-name: Node.js CI
-
+name: MP1 Pipeline
+run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 on:
   push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
   schedule:
-    - cron: "0 0 * * *"
+    - cron: '0 0 * * *'
+  repository_dispatch:
+    types: [publish-event]
 
 env:
   CONTENTFUL_ACCESS_TOKEN: ${{secrets.CONTENTFUL_ACCESS_TOKEN}}
   CONTENTFUL_SPACE_ID: ${{secrets.CONTENTFUL_SPACE_ID}}
 
 jobs:
+
   install:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 16
-      - run: npm ci
-      - run: npm install
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-  test:
-    runs-on: ubuntu-latest
-    needs: install
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: dependencies cache
+        id: cache-npm
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
         with:
-          node-version: 16
-          cache: "npm"
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run prettier
-      - run: npm run test
+          path: node_modules/
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.OS }}-npm-cache-
+      - if: ${{ steps.cache-npm.outputs.cache-hit != 'true' }}
+        name: Install dependencies
+        continue-on-error: false
+        run: npm install
+
+  jest-test-job:
+    runs-on: ubuntu-latest
+    needs: [install]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: dependencies cache
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: node_modules/
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: test jest
+        run: npm run test
+
+  format-test-job:
+    runs-on: ubuntu-latest
+    needs: [install]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: dependencies cache
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: node_modules/
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: test prettier
+        run: npm run prettier
+
+  lint-test-job:
+    runs-on: ubuntu-latest
+    needs: [install]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: dependencies cache
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: node_modules/
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: test linter
+        run: npm run lint
 
   build:
+    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
-    needs: [install, test]
+    needs: [install,jest-test-job,format-test-job,lint-test-job]
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: dependencies cache
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
         with:
-          node-version: 16
-      - run: npm ci
+          path: node_modules/
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+
       - run: npm run build
-      - uses: actions/upload-artifact@v3
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v3
         with:
-          path: out
-          retention-days: 1
+          name: build-files
+          path: out/
 
   deploy:
+    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
-    needs: [install, test, build]
+    needs: [build]
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: dependencies cache
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
         with:
-          node-version: 16
-      - uses: actions/download-artifact@v3
+          path: node_modules/
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Download a Build Artifact
+        uses: actions/download-artifact@v3.0.1
         with:
-          path: out
-          retention-days: 1
+          name: build-files
+          path: out/
       - run: npx netlify-cli deploy --site ${{secrets.NETLIFY_SITE_ID}} --auth ${{secrets.NETLIFY_AUTH_TOKEN}} --prod
