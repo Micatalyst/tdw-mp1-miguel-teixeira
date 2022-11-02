@@ -67,7 +67,7 @@ jobs:
           node-version: 16
       - run: npm ci
       - run: npm run build
-        uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v3
         with:
           path: out
           retention-days: 1
